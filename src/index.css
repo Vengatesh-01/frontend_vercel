@@ -11,6 +11,10 @@
   .glass-effect {
     @apply bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm;
   }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
 
 @keyframes fadeIn {

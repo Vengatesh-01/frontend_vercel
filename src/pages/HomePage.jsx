@@ -988,8 +988,8 @@ const HomePage = ({ showCreatePost, setShowCreatePost, showUploadModal, setShowU
             {/* Modals remain the same but styled better */}
 
             {showCreatePost && (
-                <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in" onClick={() => setShowCreatePost(false)}>
-                    <div className="bg-white rounded-xl w-full max-w-[800px] h-auto lg:h-[500px] shadow-2xl overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+                <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-0 md:p-4 backdrop-blur-sm animate-fade-in" onClick={() => setShowCreatePost(false)}>
+                    <div className="bg-white md:rounded-xl w-full max-w-[800px] h-[100dvh] md:h-auto lg:h-[500px] shadow-2xl overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
                         <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-white sticky top-0 z-10">
                             <button onClick={() => setShowCreatePost(false)} className="text-gray-900 transition-colors p-1 hover:bg-gray-100 rounded-full"><FaTimes size={18} /></button>
                             <h2 className="font-bold text-sm">Create new post</h2>
@@ -1091,7 +1091,7 @@ const HomePage = ({ showCreatePost, setShowCreatePost, showUploadModal, setShowU
                                     <FaRegSmile size={20} className="cursor-pointer hover:text-gray-600 transition-colors" />
                                     <span className="text-xs">{newPostCaption.length}/2200</span>
                                 </div>
-                                <div className="p-4 border-t border-gray-100 md:hidden pb-10">
+                                <div className="p-4 border-t border-gray-100 md:hidden bg-white sticky bottom-0 z-10 safe-area-bottom">
                                     <button
                                         onClick={handleCreatePost}
                                         disabled={isUploading || isSubmitting || !newPostImage.trim()}

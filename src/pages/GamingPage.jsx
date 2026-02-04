@@ -5,10 +5,9 @@ const GamingPage = () => {
     const [isLoading, setIsLoading] = React.useState(true);
     const [hasError, setHasError] = React.useState(false);
 
-    // Get API URL, removing trailing slash if present to avoid double slashes
-    const apiBase = (BACKEND_URL || "https://reelio.onrender.com").replace(/\/$/, "");
-    // Try without trailing slash for the base iframe src to be more standard
-    const gamingUrl = `${apiBase}/gaming-hub/`; // Added trailing slash here for better resolution
+    // Use relative path for Vercel/Static serving from 'public/gaming-hub'
+    // This bypasses the backend 500 error and ensures the latest files are served directly by Vercel
+    const gamingUrl = "/gaming-hub/";
 
     return (
         <div className="w-full h-screen bg-[#0f172a] overflow-hidden flex flex-col items-center justify-center">
