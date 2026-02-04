@@ -70,16 +70,21 @@ export const uploadToCloudinary = async (file, token, onProgress) => {
     } catch (error) {
         console.error('Cloudinary upload failure details:', {
             message: error.message,
-            code: error.code, // Useful for network errors
+            code: error.code,
             response: error.response?.data,
             status: error.response?.status,
             url: error.config?.url
         });
 
-        // Provide a more descriptive error for the UI
-        if (error.code === 'ERR_NETWORK') {
-            throw new Error(`Connection failed. Please check if the backend at ${API_BASE} is reachable.`);
+        // Differentiate between connectivity issues and auth issues
+        if (error.response?.status === 401) {
+            throw new Error('Your session has expired. Please log out and log back in to upload.');
         }
-        throw error;
+
+        if (error.code === 'ERR_NETWORK') {
+            throw new Error(`Connection failed. Please check if the backend at ${API_BASE} is reachable and that you aren't using an ad-blocker.`);
+        }
+
+        throw new Error(error.response?.data?.message || error.message || 'Upload failed due to a server error.');
     }
 };

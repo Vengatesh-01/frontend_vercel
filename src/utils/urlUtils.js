@@ -1,4 +1,4 @@
-export const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || "https://reelio.onrender.com";
+export const BACKEND_URL = (import.meta.env.VITE_API_BASE_URL || "https://reelio.onrender.com").replace(/\/+$/, '');
 
 /**
  * Normalizes a URL by prefixing local paths with the backend URL.
