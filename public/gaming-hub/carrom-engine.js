@@ -74,6 +74,32 @@ class CarromEngine {
         window.addEventListener('mouseup', this.handleMouseUp);
         window.addEventListener('keydown', this.handleKeyDown);
 
+        // Touch Support (Map to Mouse Events)
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            this.handleMouseDown(mouseEvent);
+        }, { passive: false });
+
+        window.addEventListener('touchmove', (e) => {
+            e.preventDefault(); // Prevent scrolling
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            this.handleMouseMove(mouseEvent);
+        }, { passive: false });
+
+        window.addEventListener('touchend', (e) => {
+            const mouseEvent = new MouseEvent('mouseup', {});
+            this.handleMouseUp(mouseEvent);
+        });
+
         // Start Loop
         this.gameLoop();
     }

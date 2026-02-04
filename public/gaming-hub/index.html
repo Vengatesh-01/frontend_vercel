@@ -964,6 +964,50 @@
             display: none !important;
             visibility: hidden !important;
         }
+
+        /* --- Mobile Responsive Fixes --- */
+        @media (max-width: 768px) {
+            .chess-wood-theme {
+                flex-direction: column !important;
+                justify-content: flex-start !important;
+                padding-top: 20px !important;
+                gap: 10px !important;
+            }
+
+            /* Move controls to bottom row */
+            .side-controls {
+                position: fixed !important;
+                bottom: 20px !important;
+                left: 50% !important;
+                top: auto !important;
+                transform: translateX(-50%) !important;
+                flex-direction: row !important;
+                width: max-content !important;
+                background: rgba(62, 39, 35, 0.9);
+                padding: 10px 20px;
+                border-radius: 30px;
+                border: 2px solid #facc15;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+                gap: 20px !important;
+            }
+
+            .round-btn {
+                width: 45px !important;
+                height: 45px !important;
+                font-size: 1.2rem !important;
+            }
+
+            /* Hide history panel on mobile */
+            .move-history-panel {
+                display: none !important;
+            }
+
+            /* Adjust board container */
+            .chess-main-view {
+                transform: scale(0.95);
+                margin-top: 10px;
+            }
+        }
     </style>
 
 </head>
