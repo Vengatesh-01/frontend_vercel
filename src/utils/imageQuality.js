@@ -15,55 +15,50 @@ export const compressImage = async (file, options = { maxWidth: 1200, maxHeight:
     if (file.type === 'image/gif') return file;
 
     return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = (event) => {
-            const img = new Image();
-            img.src = event.target.result;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.src = url;
+        img.onload = () => {
+            URL.revokeObjectURL(url); // Clean up memory
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
 
-                // Calculate new dimensions
-                if (width > height) {
-                    if (width > options.maxWidth) {
-                        height *= options.maxWidth / width;
-                        width = options.maxWidth;
-                    }
-                } else {
-                    if (height > options.maxHeight) {
-                        width *= options.maxHeight / height;
-                        height = options.maxHeight;
-                    }
+            // Calculate new dimensions
+            if (width > height) {
+                if (width > options.maxWidth) {
+                    height *= options.maxWidth / width;
+                    width = options.maxWidth;
                 }
+            } else {
+                if (height > options.maxHeight) {
+                    width *= options.maxHeight / height;
+                    height = options.maxHeight;
+                }
+            }
 
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
 
-                canvas.toBlob(
-                    (blob) => {
-                        if (!blob) {
-                            resolve(file);
-                            return;
-                        }
-                        // Create a new file from the blob
-                        const compressedFile = new File([blob], file.name, {
-                            type: 'image/jpeg',
-                            lastModified: Date.now(),
-                        });
-
-                        // Return the smaller one
-                        resolve(compressedFile.size < file.size ? compressedFile : file);
-                    },
-                    'image/jpeg',
-                    options.quality
-                );
-            };
-            img.onerror = () => resolve(file);
+            canvas.toBlob(
+                (blob) => {
+                    if (!blob) {
+                        resolve(file);
+                        return;
+                    }
+                    // Return the smaller one. Keep it as a blob if smaller.
+                    // The caller will handle filename extension if needed.
+                    resolve(blob.size < file.size ? blob : file);
+                },
+                'image/jpeg',
+                options.quality
+            );
         };
-        reader.onerror = () => resolve(file);
+        img.onerror = () => {
+            URL.revokeObjectURL(url);
+            resolve(file);
+        };
     });
 };
