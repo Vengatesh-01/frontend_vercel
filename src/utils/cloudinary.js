@@ -21,9 +21,17 @@ export const uploadToCloudinary = async (file, token, onProgress) => {
 
     // 1. Get signature from backend
     try {
+        console.log(`[Cloudinary] Fetching signature from: ${API_BASE}/api/upload/signature`);
         const { data: config } = await axios.get(`${API_BASE}/api/upload/signature`, {
             headers: { Authorization: `Bearer ${token}` }
         });
+
+        if (!config || !config.cloudName || !config.signature) {
+            console.error('[Cloudinary] Invalid signature configuration received:', config);
+            throw new Error('Invalid upload configuration from server');
+        }
+
+        console.log(`[Cloudinary] Signature received for cloud: ${config.cloudName}`);
 
         // 2. Prepare FormData for Cloudinary
         const formData = new FormData();
@@ -41,6 +49,7 @@ export const uploadToCloudinary = async (file, token, onProgress) => {
 
         // 3. Upload to Cloudinary
         const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${config.cloudName}/auto/upload`;
+        console.log(`[Cloudinary] Uploading to: ${cloudinaryUrl}`);
 
         const response = await axios.post(cloudinaryUrl, formData, {
             onUploadProgress: (progressEvent) => {
@@ -51,6 +60,8 @@ export const uploadToCloudinary = async (file, token, onProgress) => {
             }
         });
 
+        console.log('[Cloudinary] Upload successful:', response.data.secure_url);
+
         return {
             filePath: response.data.secure_url,
             fileName: response.data.original_filename,
@@ -59,9 +70,16 @@ export const uploadToCloudinary = async (file, token, onProgress) => {
     } catch (error) {
         console.error('Cloudinary upload failure details:', {
             message: error.message,
+            code: error.code, // Useful for network errors
             response: error.response?.data,
-            status: error.response?.status
+            status: error.response?.status,
+            url: error.config?.url
         });
+
+        // Provide a more descriptive error for the UI
+        if (error.code === 'ERR_NETWORK') {
+            throw new Error(`Connection failed. Please check if the backend at ${API_BASE} is reachable.`);
+        }
         throw error;
     }
 };
