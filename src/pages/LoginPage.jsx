@@ -1,7 +1,6 @@
 import { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
-import { FaFacebook, FaGoogle } from 'react-icons/fa';
 
 const LoginPage = () => {
     const [email, setEmail] = useState('');
@@ -96,7 +95,6 @@ const LoginPage = () => {
                 <span>About</span><span>Blog</span><span>Jobs</span><span>Help</span><span>API</span><span>Privacy</span><span>Terms</span><span>Locations</span><span>REELIO Lite</span><span>Threads</span>
             </div>
             <div className="mt-4 text-xs text-gray-400">© 2026 REELIO</div>
-            bitumen
         </div>
     );
 };
