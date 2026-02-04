@@ -1,0 +1,654 @@
+import { useState, useEffect, useContext, useRef } from 'react';
+import axios from 'axios';
+import AuthContext from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import {
+    FaRegEdit, FaChevronLeft, FaInfoCircle, FaRegImage, FaRegHeart, FaRegSmile,
+    FaMicrophone, FaRegPlayCircle, FaCheck, FaCheckDouble, FaUsers, FaArrowLeft, FaReply,
+    FaEllipsisV, FaStopCircle, FaTrash, FaGhost, FaLock, FaVolumeMute, FaBan, FaFlag, FaTimes
+} from 'react-icons/fa';
+import { io } from 'socket.io-client';
+
+const MessagesPage = () => {
+    const { user, loading: authLoading } = useContext(AuthContext);
+    const navigate = useNavigate();
+    const [conversations, setConversations] = useState([]);
+    const [selectedConversation, setSelectedConversation] = useState(null);
+    const [messages, setMessages] = useState([]);
+    const [newMessage, setNewMessage] = useState('');
+    const [typingUsers, setTypingUsers] = useState({}); // { conversationId: username }
+    const [onlineUsers, setOnlineUsers] = useState(new Set());
+    const [replyingTo, setReplyingTo] = useState(null);
+    const [showInfo, setShowInfo] = useState(false);
+    const [activeTab, setActiveTab] = useState('primary');
+    const [vanishMode, setVanishMode] = useState(false);
+    const [chatTheme, setChatTheme] = useState('classic');
+    const [showMediaMenu, setShowMediaMenu] = useState(false);
+
+    // New Message Modal State
+    const [showNewMessageModal, setShowNewMessageModal] = useState(false);
+    const [showGroupModal, setShowGroupModal] = useState(false);
+    const [searchResults, setSearchResults] = useState([]);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [selectedUsers, setSelectedUsers] = useState([]); // For groups
+    const [groupName, setGroupName] = useState('');
+
+    // Voice Note State
+    const [isRecording, setIsRecording] = useState(false);
+    const mediaRecorderRef = useRef(null);
+    const audioChunksRef = useRef([]);
+
+    const fileInputRef = useRef(null);
+    const scrollRef = useRef(null);
+    const socket = useRef(null);
+
+    // New Message Modal State
+
+    const themes = {
+        classic: { bg: 'bg-white', text: 'text-gray-900', bubble: 'bg-[#0095f6]', otherBubble: 'bg-[#efefef] text-gray-900' },
+        berry: { bg: 'bg-[#fff0f5]', text: 'text-[#800080]', bubble: 'bg-[#ff1493]', otherBubble: 'bg-white border-[#ffc0cb]' },
+        ocean: { bg: 'bg-[#f0f8ff]', text: 'text-[#000080]', bubble: 'bg-[#1e90ff]', otherBubble: 'bg-white border-[#add8e6]' },
+        twilight: { bg: 'bg-[#1a1a2e]', text: 'text-white', bubble: 'bg-[#e94560]', otherBubble: 'bg-[#16213e] text-gray-100' }
+    };
+
+    useEffect(() => {
+        if (!user) return;
+        socket.current = io('http://localhost:5000');
+        socket.current.emit('join', user._id);
+
+        socket.current.on('new-message', (m) => {
+            if (selectedConversation?._id === m.conversationId) {
+                setMessages(prev => [...prev, m]);
+                // Mark as seen immediately if active
+                socket.current.emit('mark-seen', { messageId: m._id, senderId: m.sender._id || m.sender });
+            }
+            fetchConversations();
+        });
+
+        socket.current.on('typing', ({ conversationId, senderName }) => {
+            setTypingUsers(prev => ({ ...prev, [conversationId]: senderName }));
+        });
+
+        socket.current.on('stop-typing', ({ conversationId }) => {
+            setTypingUsers(prev => {
+                const copy = { ...prev };
+                delete copy[conversationId];
+                return copy;
+            });
+        });
+
+        socket.current.on('user-status', ({ userId, status }) => {
+            setOnlineUsers(prev => {
+                const next = new Set(prev);
+                if (status === 'online') next.add(userId);
+                else next.delete(userId);
+                return next;
+            });
+        });
+
+        socket.current.on('message-seen', ({ messageId }) => {
+            setMessages(prev => prev.map(m => m._id === messageId ? { ...m, status: 'seen' } : m));
+        });
+
+        socket.current.on('message-reaction', ({ messageId, userId, emoji }) => {
+            setMessages(prev => prev.map(m => {
+                if (m._id !== messageId) return m;
+                const existing = m.reactions || [];
+                const filtered = existing.filter(r => (r.user?._id || r.user) !== userId);
+                return { ...m, reactions: [...filtered, { user: userId, emoji }] };
+            }));
+        });
+
+        return () => socket.current.disconnect();
+    }, [user?._id, selectedConversation]);
+
+    useEffect(() => { if (user) fetchConversations(); }, [user]);
+    useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [messages, typingUsers]);
+
+    const fetchConversations = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.get('http://localhost:5000/api/messages/conversations', {
+                headers: { Authorization: `Bearer ${token}` },
+                timeout: 5000
+            });
+            setConversations(res.data);
+        } catch (err) { console.error('Fetch conversations failed:', err); }
+    };
+
+    const fetchMessages = async (conv) => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.get(`http://localhost:5000/api/messages/${conv._id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+                timeout: 5000
+            });
+            setMessages(res.data);
+            setSelectedConversation(conv);
+            setReplyingTo(null);
+            setShowInfo(false);
+            // Mark last message as seen
+            if (res.data.length > 0) {
+                const last = res.data[res.data.length - 1];
+                if (last.sender !== user?._id && socket.current) socket.current.emit('mark-seen', { messageId: last._id, senderId: last.sender });
+            }
+        } catch (err) { console.error(err); }
+    };
+
+    const handleSendMessage = async (payload) => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.post('http://localhost:5000/api/messages', {
+                conversationId: selectedConversation._id,
+                ...payload,
+                replyTo: replyingTo?._id,
+                vanishMode
+            }, { headers: { Authorization: `Bearer ${token}` } });
+            setMessages(prev => [...prev, res.data]);
+            setNewMessage('');
+            setReplyingTo(null);
+            socket.current.emit('stop-typing', { conversationId: selectedConversation._id, receiverId: getOther(selectedConversation)._id });
+            fetchConversations();
+        } catch (err) { console.error(err); }
+    };
+
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const token = localStorage.getItem('token');
+            const uploadRes = await axios.post('http://localhost:5000/api/upload', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            const fileUrl = `http://localhost:5000${uploadRes.data.filePath}`;
+            const type = file.type.startsWith('image') ? 'image' : 'video';
+
+            await handleSendMessage({
+                text: '',
+                media: { type, url: fileUrl }
+            });
+        } catch (err) {
+            console.error('File upload failed:', err);
+        }
+    };
+
+    const handleReaction = async (messageId, emoji) => {
+        // Optimistic update
+        setMessages(prev => prev.map(m => {
+            if (m._id !== messageId) return m;
+            const existing = m.reactions || [];
+            const filtered = existing.filter(r => (r.user?._id || r.user) !== user._id);
+            return { ...m, reactions: [...filtered, { user: user, emoji }] };
+        }));
+
+        try {
+            const token = localStorage.getItem('token');
+            await axios.put(`http://localhost:5000/api/messages/react/${messageId}`, { emoji }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+        } catch (err) { console.error('Reaction failed:', err); }
+    };
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            mediaRecorderRef.current = mediaRecorder;
+            audioChunksRef.current = [];
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunksRef.current.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                const formData = new FormData();
+                formData.append('file', audioBlob, `voice-${Date.now()}.webm`);
+
+                try {
+                    const token = localStorage.getItem('token');
+                    const uploadRes = await axios.post('http://localhost:5000/api/upload', formData, {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                            Authorization: `Bearer ${token}`
+                        }
+                    });
+
+                    await handleSendMessage({
+                        text: '',
+                        media: { type: 'voice', url: `http://localhost:5000${uploadRes.data.filePath}` }
+                    });
+                } catch (err) {
+                    console.error('Voice upload failed:', err);
+                }
+
+                // Stop all tracks to release mic
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            mediaRecorder.start();
+            setIsRecording(true);
+        } catch (err) {
+            console.error('Error accessing microphone:', err);
+            alert('Could not access microphone.');
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+        }
+    };
+
+    const handleTyping = (e) => {
+        setNewMessage(e.target.value);
+        if (selectedConversation) {
+            socket.current.emit('typing', {
+                conversationId: selectedConversation._id,
+                receiverId: getOther(selectedConversation)._id,
+                senderName: user.username
+            });
+            // Stop typing after 2s of no input
+            clearTimeout(window.typingTimeout);
+            window.typingTimeout = setTimeout(() => {
+                socket.current.emit('stop-typing', {
+                    conversationId: selectedConversation._id,
+                    receiverId: getOther(selectedConversation)._id
+                });
+            }, 2000);
+        }
+    };
+
+    const handleCreateGroup = async () => {
+        if (!groupName || selectedUsers.length < 2) return;
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.post('http://localhost:5000/api/messages/group', {
+                participantIds: selectedUsers.map(u => u._id),
+                groupName
+            }, { headers: { Authorization: `Bearer ${token}` } });
+
+            setConversations(prev => [res.data, ...prev]);
+            setShowGroupModal(false);
+            setGroupName('');
+            setSelectedUsers([]);
+            fetchMessages(res.data);
+        } catch (err) { console.error(err); }
+    };
+
+    const getOther = (conv) => {
+        if (!conv) return null;
+        if (conv.isGroup) return { _id: 'group', username: conv.groupName || 'Group', profilePic: conv.groupPic };
+        return conv.participants?.find(p => p._id !== user?._id) || { username: 'Unknown User', profilePic: null };
+    };
+
+    const currentTheme = themes[chatTheme];
+
+    if (authLoading) return <div className="min-h-screen bg-white flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div></div>;
+
+    if (!user) {
+        navigate('/login');
+        return null;
+    }
+
+    return (
+        <div className={`flex h-screen overflow-hidden ${currentTheme.bg}`}>
+            {/* Sidebar */}
+            <div className={`w-full md:w-[398px] flex flex-col border-r border-gray-200 ${selectedConversation ? 'hidden md:flex' : 'flex'}`}>
+                <div className="p-5 flex justify-between items-center h-[75px] border-b border-gray-100 bg-white">
+                    <h1 className="font-bold text-xl tracking-tight flex items-center gap-2">
+                        {user?.username} <FaChevronLeft className="text-[10px] transform -rotate-90 mt-1" />
+                    </h1>
+                    <div className="flex items-center gap-3">
+                        <FaUsers
+                            className="text-2xl cursor-pointer hover:opacity-50 transition-opacity"
+                            title="Create Group"
+                            onClick={() => setShowGroupModal(true)}
+                        />
+                        <FaRegEdit
+                            className="text-2xl cursor-pointer hover:opacity-50 transition-opacity"
+                            onClick={() => setShowNewMessageModal(true)}
+                        />
+                    </div>
+                </div>
+
+                {/* Create Group Modal */}
+                {showGroupModal && (
+                    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+                        <div className="bg-white w-full max-w-md rounded-xl flex flex-col h-[70vh] shadow-2xl animate-scale-up">
+                            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+                                <button onClick={() => setShowGroupModal(false)} className="text-2xl"><FaTimes /></button>
+                                <h2 className="font-bold text-base">New Group</h2>
+                                <button
+                                    className="text-[#0095f6] font-bold text-sm disabled:opacity-50"
+                                    disabled={!groupName || selectedUsers.length < 2}
+                                    onClick={handleCreateGroup}
+                                >
+                                    Create
+                                </button>
+                            </div>
+                            <div className="p-4 border-b border-gray-100 space-y-3">
+                                <input
+                                    type="text"
+                                    placeholder="Group Name"
+                                    className="w-full outline-none text-base border-b border-gray-200 pb-2"
+                                    value={groupName}
+                                    onChange={(e) => setGroupName(e.target.value)}
+                                />
+                                <div className="flex flex-wrap gap-2">
+                                    {selectedUsers.map(u => (
+                                        <div key={u._id} className="bg-blue-100 text-blue-600 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                                            {u.username} <FaTimes className="cursor-pointer" onClick={() => setSelectedUsers(uS => uS.filter(user => user._id !== u._id))} />
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="font-bold text-sm">Add:</span>
+                                    <input
+                                        type="text"
+                                        placeholder="Search people..."
+                                        className="flex-1 outline-none text-sm"
+                                        onChange={(e) => {
+                                            if (e.target.value.length > 0) {
+                                                axios.get(`http://localhost:5000/api/users/search?q=${e.target.value}`, {
+                                                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+                                                }).then(res => setSearchResults(res.data)).catch(console.error);
+                                            } else {
+                                                setSearchResults([]);
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-2">
+                                {searchResults.map(u => (
+                                    <div
+                                        key={u._id}
+                                        onClick={() => {
+                                            if (!selectedUsers.find(sel => sel._id === u._id)) {
+                                                setSelectedUsers(prev => [...prev, u]);
+                                            }
+                                        }}
+                                        className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-gray-50"
+                                    >
+                                        <img src={u.profilePic || `https://ui-avatars.com/api/?name=${u.username}`} className="w-11 h-11 rounded-full border border-gray-100" />
+                                        <div className="flex-1">
+                                            <p className="font-bold text-sm">{u.username}</p>
+                                            <p className="text-gray-400 text-xs">{u.fullname || u.username}</p>
+                                        </div>
+                                        {selectedUsers.find(sel => sel._id === u._id) ? <FaCheckDouble className="text-blue-500" /> : <div className="w-6 h-6 border-2 border-gray-300 rounded-full" />}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* New Message Modal */}
+                {showNewMessageModal && (
+                    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+                        <div className="bg-white w-full max-w-md rounded-xl flex flex-col h-[70vh] shadow-2xl animate-scale-up">
+                            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+                                <button onClick={() => setShowNewMessageModal(false)} className="text-2xl"><FaTimes /></button>
+                                <h2 className="font-bold text-base">New Message</h2>
+                                <button
+                                    className="text-[#0095f6] font-bold text-sm disabled:opacity-50"
+                                    disabled={!selectedUser}
+                                    onClick={() => {
+                                        fetchMessages({ _id: 'temp', participants: [user, selectedUser], isTemp: true });
+                                        setShowNewMessageModal(false);
+                                        setSelectedUser(null);
+                                    }}
+                                >
+                                    Chat
+                                </button>
+                            </div>
+                            <div className="p-2 border-b border-gray-100 flex items-center gap-2">
+                                <span className="font-bold text-sm">To:</span>
+                                <input
+                                    type="text"
+                                    placeholder="Search..."
+                                    className="flex-1 outline-none text-sm"
+                                    autoFocus
+                                    onChange={(e) => {
+                                        // Simple debounce could be added here
+                                        if (e.target.value.length > 0) {
+                                            axios.get(`http://localhost:5000/api/users/search?q=${e.target.value}`, {
+                                                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+                                            }).then(res => setSearchResults(res.data)).catch(console.error);
+                                        } else {
+                                            setSearchResults([]);
+                                        }
+                                    }}
+                                />
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-2">
+                                {searchResults.length === 0 ? (
+                                    <p className="text-gray-400 text-sm text-center mt-10">No accounts found.</p>
+                                ) : (
+                                    searchResults.map(u => (
+                                        <div
+                                            key={u._id}
+                                            onClick={() => setSelectedUser(u)}
+                                            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${selectedUser?._id === u._id ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                                        >
+                                            <img src={u.profilePic || `https://ui-avatars.com/api/?name=${u.username}`} className="w-11 h-11 rounded-full border border-gray-100" />
+                                            <div className="flex-1">
+                                                <p className="font-bold text-sm">{u.username}</p>
+                                                <p className="text-gray-400 text-xs">{u.fullname || u.username}</p>
+                                            </div>
+                                            {selectedUser?._id === u._id ? <FaCheckDouble className="text-blue-500" /> : <div className="w-6 h-6 border-2 border-gray-300 rounded-full" />}
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                <div className="flex-1 overflow-y-auto no-scrollbar bg-white">
+                    {conversations
+                        .filter(conv => activeTab === 'primary' ? !conv.isRequest : conv.isRequest)
+                        .map(conv => {
+                            const other = getOther(conv);
+                            const isSel = selectedConversation?._id === conv._id;
+                            const isOnline = onlineUsers.has(other?._id);
+                            return (
+                                <div key={conv._id} onClick={() => fetchMessages(conv)} className={`p-3 px-5 flex gap-3 items-center cursor-pointer transition-all ${isSel ? 'bg-gray-100' : 'hover:bg-gray-50'}`}>
+                                    <div className="relative">
+                                        <img src={other?.profilePic || `https://ui-avatars.com/api/?name=${other?.username || 'User'}`} className="w-[56px] h-[56px] rounded-full object-cover border border-gray-100" />
+                                        {isOnline && <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white" />}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className={`text-sm ${isSel ? 'font-bold' : 'font-normal'}`}>{other?.username || 'Unknown User'}</p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-[12px] text-gray-400 truncate">
+                                                {typingUsers[conv._id] ? 'Typing...' : (conv.lastMessage?.text || 'Sent content')}
+                                            </p>
+                                            <span className="text-[10px] text-gray-300">•</span>
+                                            <span className="text-[10px] text-gray-300">1h</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                </div>
+            </div>
+
+            {/* Chat Area */}
+            <div className={`flex-1 flex flex-col relative ${!selectedConversation ? 'hidden md:flex items-center justify-center bg-[#fafafa]' : 'flex'}`}>
+                {selectedConversation ? (
+                    <>
+                        <div className="h-[75px] border-b border-gray-100 flex items-center justify-between px-6 bg-white sticky top-0 z-10">
+                            <div className="flex items-center gap-4">
+                                <button onClick={() => setSelectedConversation(null)} className="md:hidden"><FaChevronLeft /></button>
+                                <div className="relative">
+                                    <img src={getOther(selectedConversation)?.profilePic || `https://ui-avatars.com/api/?name=${getOther(selectedConversation)?.username}`} className="w-11 h-11 rounded-full object-cover" />
+                                    {onlineUsers.has(getOther(selectedConversation)?._id) && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />}
+                                </div>
+                                <div className="cursor-pointer" onClick={() => setShowInfo(!showInfo)}>
+                                    <p className="text-sm font-bold leading-tight">{getOther(selectedConversation)?.username || 'User'}</p>
+                                    <p className="text-[11px] text-gray-400">{onlineUsers.has(getOther(selectedConversation)?._id) ? 'Active now' : 'Active 12m ago'}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-5">
+                                <FaGhost size={20} className={`cursor-pointer transition-colors ${vanishMode ? 'text-indigo-500' : 'text-gray-400 hover:text-gray-600'}`} onClick={() => setVanishMode(!vanishMode)} />
+                                <FaInfoCircle size={20} className="cursor-pointer text-gray-900 hover:opacity-50" onClick={() => setShowInfo(!showInfo)} />
+                            </div>
+                        </div>
+
+                        <div ref={scrollRef} className="flex-1 overflow-y-auto p-5 space-y-6 no-scrollbar bg-white">
+                            {messages.map((msg, i) => {
+                                const isMine = (msg.sender?._id || msg.sender) === user?._id;
+                                const showStatus = isMine && i === messages.length - 1;
+                                return (
+                                    <div key={msg._id} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
+                                        <div className={`max-w-[70%] group relative`}>
+                                            <div
+                                                className={`p-3 px-4 rounded-[22px] text-sm ${isMine ? currentTheme.bubble + ' text-white' : currentTheme.otherBubble}`}
+                                                onDoubleClick={() => handleReaction(msg._id, '❤️')}
+                                            >
+                                                {msg.media ? (
+                                                    <div className="rounded-lg overflow-hidden my-1">
+                                                        {msg.media.type === 'image' ? (
+                                                            <img src={msg.media.url} alt="Shared media" className="max-w-[250px] max-h-[300px] object-cover" />
+                                                        ) : msg.media.type === 'video' ? (
+                                                            <video src={msg.media.url} controls className="max-w-[250px] max-h-[300px]" />
+                                                        ) : (
+                                                            <audio src={msg.media.url} controls className="max-w-[250px]" />
+                                                        )}
+                                                        {msg.text && <p className="mt-2">{msg.text}</p>}
+                                                    </div>
+                                                ) : (
+                                                    msg.text
+                                                )}
+                                            </div>
+                                            {msg.reactions?.length > 0 && (
+                                                <div className={`absolute -bottom-2 ${isMine ? 'right-0' : 'left-0'} bg-white shadow-sm border border-gray-100 rounded-full px-1.5 py-0.5 text-[10px] flex items-center z-10`}>
+                                                    {msg.reactions.slice(0, 3).map((r, i) => <span key={i}>{r.emoji}</span>)}
+                                                    {msg.reactions.length > 3 && <span className="text-gray-500 ml-0.5">+{msg.reactions.length - 3}</span>}
+                                                </div>
+                                            )}
+                                            {showStatus && (
+                                                <div className="text-[10px] text-gray-400 mt-1 flex items-center gap-1 pr-1">
+                                                    {msg.status === 'seen' ? 'Seen' : 'Delivered'}
+                                                    {msg.status === 'seen' ? <FaCheckDouble size={8} className="text-[#0095f6]" /> : <FaCheck size={8} />}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            {typingUsers[selectedConversation._id] && (
+                                <div className="flex items-start gap-2 animate-pulse">
+                                    <div className="p-3 bg-gray-100 rounded-2xl flex gap-1 items-center">
+                                        <div className="w-1 h-1 bg-gray-400 rounded-full" />
+                                        <div className="w-1 h-1 bg-gray-400 rounded-full" />
+                                        <div className="w-1 h-1 bg-gray-400 rounded-full" />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-5 bg-white border-t border-gray-100">
+                            <div className="flex flex-col space-y-2">
+                                {replyingTo && (
+                                    <div className="flex items-center justify-between bg-gray-50 p-2 px-4 rounded-t-xl text-[12px] border-x border-t border-gray-100">
+                                        <span className="text-gray-500">Replying to <span className="font-bold">@{replyingTo.sender?.username || 'User'}</span></span>
+                                        <FaTimes className="cursor-pointer" onClick={() => setReplyingTo(null)} />
+                                    </div>
+                                )}
+                                <div className={`flex items-center border border-gray-200 ${replyingTo ? 'rounded-b-2xl' : 'rounded-full'} px-4 py-3 gap-4 focus-within:ring-1 focus-within:ring-gray-200 transition-all`}>
+                                    <FaRegSmile size={24} className="text-gray-900 cursor-pointer hover:opacity-50" />
+                                    <input
+                                        type="text"
+                                        value={newMessage}
+                                        onChange={handleTyping}
+                                        onKeyPress={(e) => e.key === 'Enter' && handleSendMessage({ text: newMessage })}
+                                        placeholder="Message..."
+                                        className="flex-1 outline-none text-[13px] bg-transparent"
+                                    />
+                                    {newMessage.trim() ? (
+                                        <button onClick={() => handleSendMessage({ text: newMessage })} className="text-[#0095f6] font-bold text-sm hover:text-[#1877f2]">Send</button>
+                                    ) : (
+                                        <div className="flex gap-4 text-gray-900 items-center">
+                                            {isRecording ? (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-red-500 animate-pulse text-xs font-bold">Recording...</span>
+                                                    <FaStopCircle size={24} className="cursor-pointer text-red-500 hover:opacity-50" onClick={stopRecording} />
+                                                </div>
+                                            ) : (
+                                                <FaMicrophone size={24} className="cursor-pointer hover:opacity-50" onClick={startRecording} />
+                                            )}
+                                            <FaRegImage size={24} className="cursor-pointer hover:opacity-50" onClick={() => fileInputRef.current?.click()} />
+                                            <input type="file" ref={fileInputRef} className="hidden" accept="image/*,video/*" onChange={handleFileUpload} />
+                                            <FaRegHeart size={24} className="cursor-pointer hover:opacity-50" />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    <div className="flex flex-col items-center justify-center space-y-4 animate-fade-in">
+                        <div className="w-[96px] h-[96px] rounded-full border-2 border-black flex items-center justify-center text-4xl"><FaRegPaperPlane className="transform rotate-12" /></div>
+                        <h2 className="text-xl font-bold">Your Messages</h2>
+                        <p className="text-gray-500 text-sm max-w-[250px]">Send private photos and messages to a friend or group.</p>
+                        <button className="bg-[#0095f6] text-white px-5 py-2 rounded-lg text-sm font-bold hover:bg-[#1877f2] transition-colors">Send Message</button>
+                    </div>
+                )}
+            </div>
+
+            {/* Info Sidebar */}
+            {showInfo && selectedConversation && (
+                <div className="w-[340px] border-l border-gray-100 flex flex-col p-6 animate-slide-left bg-white h-screen">
+                    <h3 className="font-bold text-base mb-8">Details</h3>
+                    <div className="space-y-8">
+                        <div>
+                            <p className="text-[13px] font-bold text-gray-400 uppercase tracking-tighter mb-4">Chat Theme</p>
+                            <div className="flex gap-3">
+                                {Object.keys(themes).map(t => (
+                                    <button key={t} onClick={() => setChatTheme(t)} className={`w-8 h-8 rounded-full border-2 ${chatTheme === t ? 'border-blue-500 scale-110' : 'border-transparent'} transition-all`} title={t} style={{ background: t === 'berry' ? '#ff1493' : t === 'ocean' ? '#1e90ff' : t === 'twilight' ? '#e94560' : '#0095f6' }} />
+                                ))}
+                            </div>
+                        </div>
+                        <div className="space-y-4">
+                            <p className="text-[13px] font-bold text-gray-400 uppercase tracking-tighter">Members</p>
+                            <div className="flex items-center gap-3">
+                                <img src={getOther(selectedConversation)?.profilePic || `https://ui-avatars.com/api/?name=${getOther(selectedConversation)?.username}`} className="w-8 h-8 rounded-full" />
+                                <span className="text-sm font-bold">{getOther(selectedConversation)?.username}</span>
+                            </div>
+                        </div>
+                        <div className="pt-8 border-t border-gray-50 space-y-3">
+                            <button className="w-full text-left text-red-500 text-sm font-bold flex items-center gap-3 hover:bg-red-50 p-2 rounded-lg transition-colors"><FaVolumeMute /> Mute Chat</button>
+                            <button className="w-full text-left text-red-500 text-sm font-bold flex items-center gap-3 hover:bg-red-50 p-2 rounded-lg transition-colors"><FaBan /> Block</button>
+                            <button className="w-full text-left text-red-500 text-sm font-bold flex items-center gap-3 hover:bg-red-50 p-2 rounded-lg transition-colors"><FaFlag /> Report</button>
+                            <button className="w-full text-left text-red-500 text-sm font-bold flex items-center gap-3 hover:bg-red-50 p-2 rounded-lg transition-colors"><FaTrash /> Delete Chat</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <style jsx>{`
+                .no-scrollbar::-webkit-scrollbar { display: none; }
+                .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+                .animate-slide-left { animation: slideLeft 0.3s ease-out; }
+                @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+                @keyframes slideLeft { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+            `}</style>
+        </div>
+    );
+};
+
+export default MessagesPage;
