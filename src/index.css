@@ -1,6 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,6 +5,11 @@
 @layer utilities {
   .font-display {
     font-family: 'Outfit', sans-serif;
+  }
+
+  /* Glass effect for light mode */
+  .glass-effect {
+    @apply bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm;
   }
 }
 
@@ -85,9 +87,7 @@ body {
 }
 
 /* Glass effect for light mode */
-.glass-effect {
-  @apply bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm;
-}
+.glass-effect {}
 
 /* Disable scroll-snap when modal is open */
 .no-scroll-snap {
