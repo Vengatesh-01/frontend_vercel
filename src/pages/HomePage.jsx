@@ -461,7 +461,7 @@ const HomePage = ({ showCreatePost, setShowCreatePost, showUploadModal, setShowU
             const token = localStorage.getItem('token');
 
             // Detect if the uploaded file is a video (for reel creation)
-            const isVideo = newPostImage.match(/\.(mp4|mov|avi|webm)$/i);
+            const isVideo = previewMediaType === 'video';
 
             if (isVideo) {
                 // Create as Reel
