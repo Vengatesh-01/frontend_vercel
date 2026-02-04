@@ -422,30 +422,30 @@ const HomePage = ({ showCreatePost, setShowCreatePost, showUploadModal, setShowU
             if (type === 'post') {
                 const finalUrl = getAppUrl(data.filePath);
                 setNewPostImage(finalUrl); // Update with server URL once ready
-                // alert('Set newPostImage to: ' + finalUrl);
             } else if (type === 'story') {
-                // Direct story creation after upload
-                await axios.post(`${BACKEND_URL}/api/stories`, {
-                    videoUrl: data.filePath  // Send as provided (relative or full)
-                }, { headers: { Authorization: `Bearer ${token}` } });
+                try {
+                    // Direct story creation after upload
+                    await axios.post(`${BACKEND_URL}/api/stories`, {
+                        videoUrl: data.filePath  // Send as provided (relative or full)
+                    }, { headers: { Authorization: `Bearer ${token}` } });
 
-                setShowUploadModal(false);
-                fetchStories();
-                showNotification('Story shared! 🎥');
+                    setShowUploadModal(false);
+                    fetchStories();
+                    showNotification('Story shared! 🎥');
+                } catch (storyErr) {
+                    console.error('Story creation failed:', storyErr);
+                    const msg = storyErr.response?.data?.message || storyErr.message;
+                    showNotification('Failed to create story: ' + msg);
+                }
             }
         } catch (error) {
             console.error('Upload failed:', error);
             const errorMsg = error.response?.data?.message || error.message;
             showNotification('Upload failed: ' + errorMsg);
-
-            // If upload failed, revert the preview if it was a post
-            if (type === 'post') {
-                // Optional: keep it to let user see what they tried, or clear it. 
-                // Keeping it is better UX, maybe they can retry? 
-                // But currently retry logic isn't there, so maybe just show error.
-            }
         } finally {
             setIsSubmitting(false);
+            setIsUploading(false); // Make sure to clear uploading state
+            setUploadProgress(0);
         }
     };
 

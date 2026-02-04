@@ -343,24 +343,49 @@ const MessagesPage = () => {
         const file = e.target.files[0];
         if (!file) return;
 
-        const formData = new FormData();
-        formData.append('file', file);
+        const isImage = file.type.startsWith('image');
+        const type = isImage ? 'image' : 'video';
+        const localPreviewUrl = URL.createObjectURL(file);
+
+        // Optimistically add message to UI
+        const tempId = `temp-${Date.now()}`;
+        const tempMessage = {
+            _id: tempId,
+            sender: { _id: user._id, username: user.username, profilePic: user.profilePic },
+            text: '',
+            media: { type, url: localPreviewUrl, isOptimistic: true },
+            createdAt: new Date(),
+            status: 'sending'
+        };
+        setMessages(prev => [...prev, tempMessage]);
 
         try {
             const token = localStorage.getItem('token');
             const data = await uploadToCloudinary(file, token);
 
             const fileUrl = getAppUrl(data.filePath);
-            const type = file.type.startsWith('image') ? 'image' : 'video';
 
-            await handleSendMessage({
+            // Emit socket event for real-time delivery
+            socket.current.emit('send-message', {
+                conversationId: selectedConversation._id,
+                sender: user._id,
                 text: '',
-                media: { type, url: fileUrl }
+                media: { type, url: fileUrl },
+                vanishMode
             });
+
+            // Update the optimistic message with the final one from server if socket doesn't handle it fast enough
+            // or let the 'message-sent' / 'new-message' handler replace it based on logic.
+            // For now, let's just wait for socket to confirm as it usually does.
+
+            // Clean up object URL
+            setTimeout(() => URL.revokeObjectURL(localPreviewUrl), 10000);
         } catch (err) {
             console.error('File upload failed:', err);
+            setMessages(prev => prev.filter(m => m._id !== tempId));
             const errorMsg = err.response?.data?.message || err.message;
             alert(`Message section upload failed: ${errorMsg}`);
+            URL.revokeObjectURL(localPreviewUrl);
         }
     };
 
@@ -419,21 +444,38 @@ const MessagesPage = () => {
     const handleSendVoice = async () => {
         if (!recordedAudio) return;
 
-        const formData = new FormData();
-        formData.append('file', recordedAudio, `voice-${Date.now()}.webm`);
+        const localPreviewUrl = audioPreviewUrl;
+        const tempId = `temp-${Date.now()}`;
+
+        // Optimistically add message
+        const tempMessage = {
+            _id: tempId,
+            sender: { _id: user._id, username: user.username, profilePic: user.profilePic },
+            text: '',
+            media: { type: 'voice', url: localPreviewUrl, isOptimistic: true },
+            createdAt: new Date(),
+            status: 'sending'
+        };
+        setMessages(prev => [...prev, tempMessage]);
 
         try {
             const token = localStorage.getItem('token');
             const data = await uploadToCloudinary(recordedAudio, token);
+            const fileUrl = getAppUrl(data.filePath);
 
-            await handleSendMessage({
+            socket.current.emit('send-message', {
+                conversationId: selectedConversation._id,
+                sender: user._id,
                 text: '',
-                media: { type: 'voice', url: getAppUrl(data.filePath) }
+                media: { type: 'voice', url: fileUrl },
+                vanishMode
             });
 
             handleDeleteVoice();
         } catch (err) {
             console.error('Voice upload failed:', err);
+            setMessages(prev => prev.filter(m => m._id !== tempId));
+            alert('Voice message failed to send.');
         }
     };
 
