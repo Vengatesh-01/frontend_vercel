@@ -1019,15 +1019,7 @@
     <div id="hub">
         <div class="glass-card">
             <div class="gaming-header">
-                <span class="hub-badge">REELIO GAMING</span>
-                <h1
-                    style="margin: 0; font-size: 2.8rem; background: linear-gradient(to right, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900; letter-spacing: -1px;">
-                    GAMING HUB <span
-                        style="font-size: 0.8rem; vertical-align: middle; -webkit-text-fill-color: #facc15; opacity: 0.6;">v1.0.6</span>
-                </h1>
-                <p
-                    style="color: #94a3b8; font-size: clamp(0.9rem, 4vw, 1.1rem); max-width: 600px; margin: 0 auto 30px;">
-                    Five Premium Games. Seamless Multiplayer. Built for Reelio.</p>
+                <span class="hub-badge" style="margin-bottom: 20px;">REELIO GAMING</span>
             </div>
 
             <div class="game-grid">
@@ -1185,29 +1177,6 @@
             }
         }
 
-        function startGame(type) {
-            currentGame = type;
-            document.getElementById('hub').style.transform = "scale(0.8)";
-            document.getElementById('hub').style.opacity = "0";
-
-            setTimeout(() => {
-                document.getElementById('hub').style.display = "none";
-                document.getElementById('game-container').style.display = "block";
-
-                if (isMultiplayer && socket && socket.connected) {
-                    document.getElementById('multiplayer-status').style.display = "block";
-
-                    socket.emit('join-room', {
-                        gameType: type
-                    });
-                }
-
-                resizeCanvas();
-                initGameEngine(type);
-            }
-
-                , 500);
-        }
 
         function backToHub() {
             if (animationId) cancelAnimationFrame(animationId);
@@ -1226,6 +1195,14 @@
             const hub = document.getElementById('hub');
             hub.style.transform = "scale(1)";
             hub.style.opacity = "1";
+            hub.style.display = "flex";
+
+            // Remove Carrom UI
+            const carromUi = document.getElementById('carrom-ui-layer');
+            if (carromUi) carromUi.remove();
+
+            // Show generic back-btn if hidden
+            document.querySelector('.back-btn').style.display = 'block';
 
             // Clean up overlays
             const overlay = document.getElementById('html-overlay');
@@ -2098,13 +2075,15 @@
             uiLayer.appendChild(exitBtn);
 
             document.body.appendChild(uiLayer);
+            document.querySelector('.back-btn').style.display = 'none';
             carromEngine.start(canvas, uiLayer, ctx);
         }
 
         function stopCarrom() {
             carromEngine.stop();
             const ui = document.getElementById('carrom-ui-layer');
-            if (ui) ui.style.display = 'none';
+            if (ui) ui.remove();
+            document.querySelector('.back-btn').style.display = 'block';
         }
 
         function showGameOver(title, desc, showRestart = false) {

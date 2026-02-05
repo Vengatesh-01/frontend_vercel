@@ -125,8 +125,11 @@ class CarromEngine {
         if (this.overlay) {
             this.overlay.innerHTML = '';
             this.overlay.style.pointerEvents = "none";
-            // Do NOT remove overlay here, parent handles it
         }
+
+        // Clean up Scoreboard HUD
+        const hub = document.getElementById('carrom-score-hud-root');
+        if (hub) hub.remove();
 
         if (this.audioCtx) {
             // Suspended/Close context if needed
@@ -157,25 +160,30 @@ class CarromEngine {
     setupUI() {
         console.log("CarromEngine: Setting up UI...");
 
-        // Move Exit Button down below the P1 Widget & Style it small/unique
-        const backBtns = document.querySelectorAll('.back-btn');
-        backBtns.forEach(btn => {
-            btn.dataset.originalTop = btn.style.top || '20px';
-            btn.dataset.originalTransform = btn.style.transform || '';
-            btn.dataset.originalPadding = btn.style.padding || '';
-            btn.dataset.originalBackground = btn.style.background || '';
-            btn.dataset.originalBorder = btn.style.border || '';
-
-            btn.style.top = '145px';
-            btn.style.transform = 'scale(0.85)';
-            btn.style.transformOrigin = 'left top';
-            btn.style.padding = '8px 16px';
-            btn.style.background = 'linear-gradient(to bottom, #78350f, #451a03)';
-            btn.style.border = '2px solid #f59e0b';
-            btn.style.borderRadius = '20px';
-            btn.style.boxShadow = '0 4px 10px rgba(0,0,0,0.5)';
-            btn.style.zIndex = '2147483648'; // Above HUD if needed
-        });
+        // Create Exit Button for Carrom
+        const exitBtn = document.createElement('button');
+        exitBtn.innerText = 'Exit Match';
+        exitBtn.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(239, 68, 68, 0.9);
+            border: 2px solid #ef4444;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            pointer-events: auto;
+            z-index: 2147483648;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        `;
+        exitBtn.onclick = () => {
+            if (window.backToHub) window.backToHub();
+        };
+        this.overlay.appendChild(exitBtn);
 
         // Remove any existing HUD to prevent duplicates
         const existingHud = document.getElementById('carrom-score-hud-root');
