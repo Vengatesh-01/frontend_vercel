@@ -8,7 +8,7 @@ export const isMobileApp = () => {
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
 
     // Check if running inside potential Flutter WebView
-    const isWebView = /wv|WebView/i.test(userAgent) ||
+    const isWebView = /wv|WebView|ReelioMobileApp/i.test(userAgent) ||
         (window.FlutterInterface !== undefined) ||
         (window.flutter_inappwebview !== undefined);
 

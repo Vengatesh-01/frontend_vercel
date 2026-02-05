@@ -8,13 +8,18 @@ const API_BASE = BACKEND_URL;
 
 // Bypasses Ngrok browser warning and adds auth headers globally
 axios.interceptors.request.use(config => {
-    const token = localStorage.getItem('token');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+    // Check if the request is for our backend
+    const isBackendRequest = config.url && (config.url.startsWith(API_BASE) || config.url.startsWith('/') || config.url.includes('localhost') || config.url.includes('ngrok') || config.url.includes('reelio'));
+
+    if (isBackendRequest) {
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        // Critical for Ngrok and LocalTunnel mobile testing
+        config.headers['ngrok-skip-browser-warning'] = '69420';
+        config.headers['bypass-tunnel-reminder'] = 'true';
     }
-    // Critical for Ngrok and LocalTunnel mobile testing
-    config.headers['ngrok-skip-browser-warning'] = '69420';
-    config.headers['bypass-tunnel-reminder'] = 'true';
     return config;
 }, error => {
     return Promise.reject(error);

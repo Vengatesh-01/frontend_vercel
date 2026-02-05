@@ -449,7 +449,7 @@ const ProfilePage = () => {
                                     accept="image/*"
                                 />
                                 <img
-                                    src={editProfilePic?.startsWith('blob:') ? editProfilePic : getAppUrl(editProfilePic)}
+                                    src={getAppUrl(editProfilePic)}
                                     className="w-14 h-14 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
                                     onClick={() => fileInputRef.current.click()}
                                     onError={(e) => {

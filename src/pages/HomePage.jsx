@@ -387,16 +387,12 @@ const HomePage = ({ showCreatePost, setShowCreatePost, showUploadModal, setShowU
 
     const handleFileSelect = async (e, type) => {
         const file = e.target.files?.[0];
-        // alert(`File selected: ${file?.name || 'none'} (${Math.round((file?.size || 0) / 1024)} KB)`);
-
         if (!file) {
             console.log('No file detected. Picker might have been cancelled.');
-            setIsSubmitting(false);
-            setIsUploading(false);
             return;
         }
 
-        // Immediate Preview Support
+        // 1. Immediate Preview Support
         const isVideo = file.type.startsWith('video');
         setPreviewMediaType(isVideo ? 'video' : 'image');
         const localPreviewUrl = URL.createObjectURL(file);
@@ -405,28 +401,30 @@ const HomePage = ({ showCreatePost, setShowCreatePost, showUploadModal, setShowU
             setNewPostImage(localPreviewUrl);
         }
 
-        const formData = new FormData();
-        formData.append('file', file);
-
-        // alert('Starting upload... (wait for next alert)');
         setIsSubmitting(true);
         setIsUploading(true);
+        setUploadProgress(0);
+
         try {
             const token = localStorage.getItem('token');
             const data = await uploadToCloudinary(file, token, (percent) => {
                 setUploadProgress(percent);
             });
-            // alert('SERVER RESPONSE REACHED! Path: ' + (data?.filePath || 'MISSING'));
-            // alert('SERVER RESPONSE REACHED! Path: ' + (data?.filePath || 'MISSING'));
+
+            if (!data || !data.filePath) {
+                throw new Error('Server returned an empty file path');
+            }
 
             if (type === 'post') {
                 const finalUrl = getAppUrl(data.filePath);
-                setNewPostImage(finalUrl); // Update with server URL once ready
+                // Only replace if finalUrl is valid, otherwise keep the local preview
+                if (finalUrl) {
+                    setNewPostImage(finalUrl);
+                }
             } else if (type === 'story') {
                 try {
-                    // Direct story creation after upload
                     await axios.post(`${BACKEND_URL}/api/stories`, {
-                        videoUrl: data.filePath  // Send as provided (relative or full)
+                        videoUrl: data.filePath
                     }, { headers: { Authorization: `Bearer ${token}` } });
 
                     setShowUploadModal(false);
@@ -442,18 +440,25 @@ const HomePage = ({ showCreatePost, setShowCreatePost, showUploadModal, setShowU
             console.error('Upload failed:', error);
             const errorMsg = error.response?.data?.message || error.message;
             showNotification('Upload failed: ' + errorMsg);
+            // Optionally clear preview on fatal upload error
+            // if (type === 'post') setNewPostImage(''); 
         } finally {
             setIsSubmitting(false);
-            setIsUploading(false); // Make sure to clear uploading state
+            setIsUploading(false);
             setUploadProgress(0);
         }
     };
 
     const handleCreatePost = async (e) => {
         e.preventDefault();
-        // alert('handleCreatePost triggered! Image URL: ' + newPostImage);
-        if (!newPostImage.trim()) {
-            showNotification('Cannot share: newPostImage is empty.');
+
+        if (!newPostImage || !newPostImage.trim()) {
+            showNotification('Please select a photo or video first.');
+            return;
+        }
+
+        if (isUploading) {
+            showNotification('Please wait for the upload to complete.');
             return;
         }
         setIsSubmitting(true);

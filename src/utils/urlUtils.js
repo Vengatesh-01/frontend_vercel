@@ -10,6 +10,11 @@ export const BACKEND_URL = (import.meta.env.VITE_API_BASE_URL || "https://reelio
 export const getAppUrl = (url, fallback = '') => {
     if (!url) return fallback;
 
+    // If it's a blob URL (for local preview), return as is
+    if (url.startsWith('blob:')) {
+        return url;
+    }
+
     // If it's a YouTube URL or already an external absolute URL we want to keep, return it
     if (url.startsWith('http')) {
         // Explicitly check for Cloudinary or other external storage
