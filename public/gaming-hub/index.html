@@ -2050,15 +2050,17 @@
             `;
 
             document.body.appendChild(uiLayer);
-            // Ensure back button is visible, on top, and positioned Top-Left
+            // Ensure back button is visible, on top, and positioned Top-Left STRICTLY
             const backBtn = document.querySelector('.back-btn');
             if (backBtn) {
                 backBtn.style.display = 'block';
-                backBtn.style.zIndex = '2147483647'; // Max Z-Index
-                // Revert to Top-Left
-                backBtn.style.left = '20px';
-                backBtn.style.transform = 'none';
-                backBtn.style.top = '20px';
+                backBtn.style.zIndex = '2147483647';
+
+                // Force Styles with !important
+                backBtn.style.setProperty('position', 'fixed', 'important');
+                backBtn.style.setProperty('top', '20px', 'important');
+                backBtn.style.setProperty('left', '20px', 'important');
+                backBtn.style.setProperty('transform', 'none', 'important');
             }
             carromEngine.start(canvas, uiLayer, ctx);
         }
@@ -2070,11 +2072,12 @@
             const backBtn = document.querySelector('.back-btn');
             if (backBtn) {
                 backBtn.style.display = 'block';
-                // Revert to default top-left style
-                backBtn.style.left = '20px';
-                backBtn.style.transform = 'none';
-                backBtn.style.top = '20px';
-                backBtn.style.zIndex = '110';
+                // Revert to default styles (remove inline overrides)
+                backBtn.style.removeProperty('position');
+                backBtn.style.removeProperty('top');
+                backBtn.style.removeProperty('left');
+                backBtn.style.removeProperty('transform');
+                backBtn.style.zIndex = ''; // Reset to CSS default
             }
         }
 
