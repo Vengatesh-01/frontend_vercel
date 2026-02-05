@@ -56,17 +56,10 @@ class CarromEngine {
         this.ctx = ctx;
         this.active = true;
 
-        // Calculate dimensions
-        const size = Math.min(canvas.width, canvas.height) * 0.75;
-        this.centerX = canvas.width / 2;
-        this.centerY = canvas.height / 2; // Perfect center
-        this.boardRadius = size / 2;
-        this.pocketRadius = this.boardRadius * 0.12;
-        this.coinRadius = this.boardRadius * 0.045;
-        this.strikerRadius = this.coinRadius * 1.4;
-
+        this.resize(canvas.width, canvas.height);
         this.setupUI();
         this.initGame();
+
 
         // Attach listeners
         this.canvas.addEventListener('mousedown', this.handleMouseDown);
@@ -102,6 +95,19 @@ class CarromEngine {
 
         // Start Loop
         this.gameLoop();
+    }
+
+    resize(width, height) {
+        if (!this.canvas) return;
+        this.canvas.width = width;
+        this.canvas.height = height;
+        const size = Math.min(width, height) * 0.95;
+        this.centerX = width / 2;
+        this.centerY = height / 2;
+        this.boardRadius = size / 2;
+        this.pocketRadius = this.boardRadius * 0.08;
+        this.coinRadius = this.boardRadius * 0.045;
+        this.strikerRadius = this.coinRadius * 1.4;
     }
 
     stop() {

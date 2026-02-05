@@ -1336,6 +1336,8 @@
                 const size = Math.min(availableHeight, 800, window.innerWidth * 0.85);
                 document.documentElement.style.setProperty('--board-size', (size > 250 ? size : 250) + 'px');
                 if (board) board.resize();
+            } else if (currentGame === 'carrom' && carromEngine && carromEngine.active) {
+                carromEngine.resize(canvas.width, canvas.height);
             }
         }
 
@@ -2048,11 +2050,15 @@
             `;
 
             document.body.appendChild(uiLayer);
-            // Ensure back button is visible and on top
+            // Ensure back button is visible, on top, and centered
             const backBtn = document.querySelector('.back-btn');
             if (backBtn) {
                 backBtn.style.display = 'block';
-                backBtn.style.zIndex = '10001'; // Higher than uiLayer
+                backBtn.style.zIndex = '2147483647'; // Max Z-Index
+                // Center at Top
+                backBtn.style.left = '50%';
+                backBtn.style.transform = 'translateX(-50%)';
+                backBtn.style.top = '10px';
             }
             carromEngine.start(canvas, uiLayer, ctx);
         }
@@ -2061,7 +2067,15 @@
             carromEngine.stop();
             const ui = document.getElementById('carrom-ui-layer');
             if (ui) ui.remove();
-            document.querySelector('.back-btn').style.display = 'block';
+            const backBtn = document.querySelector('.back-btn');
+            if (backBtn) {
+                backBtn.style.display = 'block';
+                // Revert to default top-left style
+                backBtn.style.left = '20px';
+                backBtn.style.transform = 'none';
+                backBtn.style.top = '20px';
+                backBtn.style.zIndex = '110';
+            }
         }
 
         function showGameOver(title, desc, showRestart = false) {
