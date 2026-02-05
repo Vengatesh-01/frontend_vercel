@@ -164,7 +164,7 @@ const SettingsPage = () => {
                 setUploadProgress(percent);
             });
 
-            setProfileData({ ...profileData, photo: data.filePath });
+            setProfileData(prev => ({ ...prev, photo: data.filePath }));
             showToast('Photo uploaded! Click "Save Profile" to apply changes.');
         } catch (err) {
             console.error('Error uploading file:', err);
@@ -553,10 +553,10 @@ const SettingsPage = () => {
 
                                 <button
                                     type="submit"
-                                    disabled={isSavingProfile}
-                                    className={`w-full py-4 rounded-xl text-sm font-bold transition-all shadow-lg active:scale-[0.98] ${isSavingProfile ? 'bg-gray-200 text-gray-400' : 'bg-blue-500 text-white shadow-blue-100 hover:bg-blue-600'}`}
+                                    disabled={isSavingProfile || isUploading}
+                                    className={`w-full py-4 rounded-xl text-sm font-bold transition-all shadow-lg active:scale-[0.98] ${isSavingProfile || isUploading ? 'bg-gray-200 text-gray-400' : 'bg-blue-500 text-white shadow-blue-100 hover:bg-blue-600'}`}
                                 >
-                                    {isSavingProfile ? 'Saving Changes...' : 'Save Profile'}
+                                    {isSavingProfile ? 'Saving Changes...' : isUploading ? 'Uploading...' : 'Save Profile'}
                                 </button>
                             </form>
                         </div>

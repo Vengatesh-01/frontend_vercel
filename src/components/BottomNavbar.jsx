@@ -1,6 +1,7 @@
 import { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
+import getAppUrl from '../utils/urlUtils';
 import {
     FaHome, FaSearch, FaFilm, FaRegPaperPlane, FaPlusSquare, FaRobot, FaGamepad, FaCompass
 } from 'react-icons/fa';
@@ -23,7 +24,7 @@ const BottomNavbar = ({ onCreatePost, onSearchToggle }) => {
         {
             icon: () => (
                 <img
-                    src={user?.profilePic || `https://ui-avatars.com/api/?name=${user?.username}`}
+                    src={getAppUrl(user?.profilePic) || `https://ui-avatars.com/api/?name=${user?.username}`}
                     className={`w-6 h-6 rounded-full border ${isActive(`/profile/${user?.username}`) ? 'border-black' : 'border-transparent'}`}
                 />
             ),
