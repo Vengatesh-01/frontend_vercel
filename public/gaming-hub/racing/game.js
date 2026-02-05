@@ -114,6 +114,7 @@ class RacingGameEngine {
                 font-weight: 800;
                 transition: all 0.1s;
                 opacity: 0.8;
+                pointer-events: auto; /* Enable touch/mouse events */
             }
             .pedal.active {
                 transform: scale(0.9) translateY(5px);
@@ -131,6 +132,7 @@ class RacingGameEngine {
                 justify-content: center;
                 transition: transform 0.1s;
                 background: radial-gradient(circle, #334155 20%, transparent 21%);
+                pointer-events: auto; /* Enable touch/mouse events */
             }
             .wheel-hub {
                 width: 40px; height: 40px;

@@ -292,6 +292,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            /* Center horizontally and vertically */
             gap: 12px;
             padding: 10px;
             height: 100vh;
@@ -1260,34 +1261,63 @@
                     const gameContainer = document.getElementById('game-container');
                     gameContainer.style.overflow = 'hidden';
 
-                    // Wire up mobile controls for touch steering
+                    // Wire up mobile controls for touch steering and pedals
                     setTimeout(() => {
                         const btnLeft = document.getElementById('btn-left');
                         const btnRight = document.getElementById('btn-right');
+                        const pedalGas = document.getElementById('pedal-gas');
+                        const pedalBrake = document.getElementById('pedal-brake');
 
-                        if (btnLeft && btnRight && window.RacingGame && window.RacingGame.instance) {
+                        if (window.RacingGame && window.RacingGame.instance) {
                             const input = window.RacingGame.instance.input;
 
-                            // Auto-throttle on mobile (always accelerating)
-                            input.setTouchControl('throttle', true);
+                            // Steering - Left
+                            if (btnLeft) {
+                                btnLeft.addEventListener('touchstart', (e) => {
+                                    e.preventDefault();
+                                    input.setTouchControl('left', true);
+                                });
+                                btnLeft.addEventListener('touchend', (e) => {
+                                    e.preventDefault();
+                                    input.setTouchControl('left', false);
+                                });
+                            }
 
-                            // Left button
-                            btnLeft.addEventListener('touchstart', (e) => {
-                                e.preventDefault();
-                                input.setTouchControl('left', true);
-                            });
-                            btnLeft.addEventListener('touchend', () => {
-                                input.setTouchControl('left', false);
-                            });
+                            // Steering - Right
+                            if (btnRight) {
+                                btnRight.addEventListener('touchstart', (e) => {
+                                    e.preventDefault();
+                                    input.setTouchControl('right', true);
+                                });
+                                btnRight.addEventListener('touchend', (e) => {
+                                    e.preventDefault();
+                                    input.setTouchControl('right', false);
+                                });
+                            }
 
-                            // Right button
-                            btnRight.addEventListener('touchstart', (e) => {
-                                e.preventDefault();
-                                input.setTouchControl('right', true);
-                            });
-                            btnRight.addEventListener('touchend', () => {
-                                input.setTouchControl('right', false);
-                            });
+                            // Gas Pedal
+                            if (pedalGas) {
+                                pedalGas.addEventListener('touchstart', (e) => {
+                                    e.preventDefault();
+                                    input.setTouchControl('throttle', true);
+                                });
+                                pedalGas.addEventListener('touchend', (e) => {
+                                    e.preventDefault();
+                                    input.setTouchControl('throttle', false);
+                                });
+                            }
+
+                            // Brake Pedal
+                            if (pedalBrake) {
+                                pedalBrake.addEventListener('touchstart', (e) => {
+                                    e.preventDefault();
+                                    input.setTouchControl('brake', true);
+                                });
+                                pedalBrake.addEventListener('touchend', (e) => {
+                                    e.preventDefault();
+                                    input.setTouchControl('brake', false);
+                                });
+                            }
                         }
                     }, 500); // Wait for racing game to fully initialize
                 }

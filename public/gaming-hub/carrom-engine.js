@@ -205,13 +205,13 @@ class CarromEngine {
 
         hudRoot.innerHTML = `
             <!-- Top Scoreboard (Floating Corners Theme) -->
-            <div id="carrom-score-hud" style="position: fixed; top: 0; left: 0; width: 100%; height: 0; display: flex !important; justify-content: space-between; align-items: flex-start; padding: 20px; z-index: 2147483647; pointer-events: none;">
+            <div id="carrom-score-hud" style="position: fixed; top: 0; left: 0; width: 100%; height: 0; display: flex !important; justify-content: space-between; align-items: flex-start; padding: 50px 20px 20px; z-index: 2147483647; pointer-events: none;">
                 
                 <!-- Player 1 (Left: Alex) -->
-                <div style="display: flex; align-items: center; gap: 12px; background: linear-gradient(to bottom, #451a03, #2a0a00); padding: 10px 20px; border-radius: 16px; border: 2px solid #78350f; box-shadow: 0 6px 12px rgba(0,0,0,0.6); pointer-events: auto;">
+                <div style="display: flex; align-items: center; gap: 12px; background: linear-gradient(to bottom, #451a03, #2a0a00); padding: 10px 20px; border-radius: 16px; border: 2px solid #facc15; box-shadow: 0 6px 12px rgba(0,0,0,0.6); pointer-events: auto;">
                     <!-- Avatar Block -->
                     <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
-                        <div style="width: 50px; height: 50px; border: 2px solid #ef4444; border-radius: 10px; overflow: hidden; box-shadow: 0 0 8px rgba(239, 68, 68, 0.8); background: #1f2937;">
+                        <div style="width: 50px; height: 50px; border: 2px solid #facc15; border-radius: 10px; overflow: hidden; box-shadow: 0 0 8px rgba(250, 204, 21, 0.8); background: #1f2937;">
                             <img src="${p1Avatar}" style="width: 100%; height: 100%; object-fit: cover;">
                         </div>
                     </div>
@@ -222,13 +222,13 @@ class CarromEngine {
                     </div>
 
                     <!-- Score -->
-                    <div id="s1" style="color: #fff; font-weight: 900; font-size: 1.8rem; font-family: sans-serif;">0</div>
+                    <div id="s1" style="color: #fff; font-weight: 900; font-size: 2.2rem; font-family: sans-serif; text-shadow: 0 0 10px #facc15;">0</div>
                 </div>
 
                 <!-- Player 2 (Right: Carry) -->
-                <div style="display: flex; align-items: center; gap: 12px; background: linear-gradient(to bottom, #451a03, #2a0a00); padding: 10px 20px; border-radius: 16px; border: 2px solid #78350f; box-shadow: 0 6px 12px rgba(0,0,0,0.6); pointer-events: auto;">
+                <div style="display: flex; align-items: center; gap: 12px; background: linear-gradient(to bottom, #451a03, #2a0a00); padding: 10px 20px; border-radius: 16px; border: 2px solid #facc15; box-shadow: 0 6px 12px rgba(0,0,0,0.6); pointer-events: auto;">
                     <!-- Score -->
-                    <div id="s2" style="color: #fff; font-weight: 900; font-size: 1.8rem; font-family: sans-serif;">0</div>
+                    <div id="s2" style="color: #fff; font-weight: 900; font-size: 2.2rem; font-family: sans-serif; text-shadow: 0 0 10px #facc15;">0</div>
 
                     <!-- Black Coin Icon -->
                     <div style="width: 32px; height: 32px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #404040, #171717); border: 1px solid #525252; box-shadow: 0 2px 4px rgba(0,0,0,0.4); position: relative;">
@@ -237,7 +237,7 @@ class CarromEngine {
 
                     <!-- Avatar Block -->
                     <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
-                        <div style="width: 50px; height: 50px; border: 2px solid #ef4444; border-radius: 10px; overflow: hidden; box-shadow: 0 0 8px rgba(239, 68, 68, 0.8); background: #1f2937;">
+                        <div style="width: 50px; height: 50px; border: 2px solid #facc15; border-radius: 10px; overflow: hidden; box-shadow: 0 0 8px rgba(250, 204, 21, 0.8); background: #1f2937;">
                             <img src="${p2Avatar}" style="width: 100%; height: 100%; object-fit: cover;">
                         </div>
                     </div>
