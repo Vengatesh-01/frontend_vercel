@@ -193,7 +193,7 @@ class CarromEngine {
 
         hudRoot.innerHTML = `
             <!-- Top Scoreboard (Floating Corners Theme) -->
-            <div id="carrom-score-hud" style="position: fixed; top: 0; left: 0; width: 100%; height: 0; display: flex !important; justify-content: space-between; align-items: flex-start; padding: 50px 20px 20px; z-index: 2147483647; pointer-events: none;">
+            <div id="carrom-score-hud" style="position: fixed; top: 0; left: 0; width: 100%; height: 0; display: flex !important; justify-content: space-between; align-items: flex-start; padding: 80px 20px 20px; z-index: 2147483647; pointer-events: none;">
                 
                 <!-- Player 1 (Left: Alex) -->
                 <div style="display: flex; align-items: center; gap: 12px; background: linear-gradient(to bottom, #451a03, #2a0a00); padding: 10px 20px; border-radius: 16px; border: 2px solid #facc15; box-shadow: 0 6px 12px rgba(0,0,0,0.6); pointer-events: auto;">
