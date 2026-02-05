@@ -135,7 +135,7 @@ const SettingsPage = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            if (checkUserLoggedIn) await checkUserLoggedIn();
+            if (checkUserLoggedIn) await checkUserLoggedIn(true);
             showToast('Profile updated successfully!');
             setIsSavingProfile(false);
             setActivePanel(null);

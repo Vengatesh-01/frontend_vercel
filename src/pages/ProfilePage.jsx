@@ -96,7 +96,7 @@ const ProfilePage = () => {
             // alert('Profile sync complete!');
 
             // Refresh global auth
-            await checkUserLoggedIn();
+            await checkUserLoggedIn(true);
 
         } catch (err) {
             console.error('Error during direct upload:', err);
@@ -229,7 +229,7 @@ const ProfilePage = () => {
             setProfileUser(prev => ({ ...prev, bio: response.data.bio, fullname: response.data.fullname, profilePic: response.data.profilePic }));
 
             // CRITICAL: Refresh AuthContext to update profile picture across entire app
-            await checkUserLoggedIn();
+            await checkUserLoggedIn(true);
 
             setShowEditModal(false);
             setIsSaving(false);
