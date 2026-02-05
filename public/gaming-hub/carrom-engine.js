@@ -98,7 +98,7 @@ class CarromEngine {
         window.addEventListener('touchend', (e) => {
             const mouseEvent = new MouseEvent('mouseup', {});
             this.handleMouseUp(mouseEvent);
-        });
+        }, { passive: false });
 
         // Start Loop
         this.gameLoop();

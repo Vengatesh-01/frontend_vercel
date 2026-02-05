@@ -2054,12 +2054,6 @@
         function startCarrom() {
             carromEngine.stop(); // Stop potential previous instance
 
-            // Create a dedicated UI layer for Carrom (Do NOT reuse game-status-msg)
-            let uiLayer = document.getElementById('carrom-ui-layer');
-            if (uiLayer) {
-                uiLayer.remove(); // Remove old one to perform a clean reset
-            }
-
             uiLayer = document.createElement('div');
             uiLayer.id = 'carrom-ui-layer';
             uiLayer.style.position = 'fixed';
@@ -2072,8 +2066,34 @@
             uiLayer.style.backgroundColor = 'transparent';
             uiLayer.style.pointerEvents = 'none';
             uiLayer.style.zIndex = '9999';
+
+            // Add Exit Button for Carrom
+            const exitBtn = document.createElement('button');
+            exitBtn.innerText = 'Exit Match';
+            exitBtn.style.cssText = `
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                background: rgba(239, 68, 68, 0.8);
+                border: 2px solid #ef4444;
+                color: white;
+                padding: 10px 20px;
+                border-radius: 12px;
+                font-weight: 800;
+                cursor: pointer;
+                pointer-events: auto;
+                z-index: 10000;
+                text-transform: uppercase;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            `;
+            exitBtn.onclick = () => {
+                backToHub();
+                if (typeof stopCarrom === 'function') stopCarrom();
+            };
+            uiLayer.appendChild(exitBtn);
+
             document.body.appendChild(uiLayer);
-            uiLayer.style.display = 'block'; // Ensure visibility
+            uiLayer.style.display = 'block';
 
             carromEngine.start(canvas, uiLayer, ctx);
         }
