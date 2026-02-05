@@ -633,8 +633,77 @@ class CarromEngine {
         // ... (Simple check, can remain same as in monolithic)
     }
 
-    playHitSound(type = 'hit') {
-        // ... (Same audio logic)
+    // --- Audio System (Web Audio API) ---
+    initAudio() {
+        if (!this.audioCtx) {
+            this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (this.audioCtx.state === 'suspended') {
+            this.audioCtx.resume();
+        }
+    }
+
+    createNoiseBuffer() {
+        const bufferSize = this.audioCtx.sampleRate * 0.1;
+        const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+        return buffer;
+    }
+
+    playHitSound(type = 'hit', volume = 1) {
+        try {
+            this.initAudio();
+            const ctx = this.audioCtx;
+            if (!ctx) return;
+
+            const gain = ctx.createGain();
+            gain.connect(ctx.destination);
+
+            if (type === 'hit') {
+                const osc = ctx.createOscillator();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800 + Math.random() * 400, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.05);
+                gain.gain.setValueAtTime(volume * 0.6, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+                osc.connect(gain);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.05);
+
+                const noise = ctx.createBufferSource();
+                noise.buffer = this.createNoiseBuffer();
+                const noiseGain = ctx.createGain();
+                noiseGain.gain.setValueAtTime(volume * 0.4, ctx.currentTime);
+                noiseGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.02);
+                noise.connect(noiseGain);
+                noiseGain.connect(ctx.destination);
+                noise.start();
+            } else if (type === 'pocket') {
+                const osc = ctx.createOscillator();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(200, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.8, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3);
+                osc.connect(gain);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.3);
+            } else if (type === 'wall') {
+                const osc = ctx.createOscillator();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(150, ctx.currentTime);
+                gain.gain.setValueAtTime(volume * 0.5, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+                osc.connect(gain);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.1);
+            }
+        } catch (e) {
+            console.error("Audio error:", e);
+        }
     }
 
     draw() {

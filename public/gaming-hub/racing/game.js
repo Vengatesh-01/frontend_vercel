@@ -163,19 +163,20 @@ class RacingGameEngine {
             }
             .exit-btn {
                 position: absolute;
-                top: 20px;
-                right: 20px;
-                background: rgba(239, 68, 68, 0.2);
+                top: 10px;
+                right: 10px;
+                background: rgba(239, 68, 68, 0.4);
                 border: 2px solid #ef4444;
-                color: #ef4444;
-                padding: 10px 20px;
-                border-radius: 50px;
+                color: #fff;
+                padding: 8px 16px;
+                border-radius: 12px;
                 font-weight: 800;
                 cursor: pointer;
                 pointer-events: auto;
                 transition: all 0.2s;
                 text-transform: uppercase;
                 letter-spacing: 1px;
+                z-index: 9999;
             }
             .exit-btn:hover { background: #ef4444; color: white; }
         `;
@@ -217,29 +218,22 @@ class RacingGameEngine {
             </div>
 
             <!-- Controls (Visual) -->
-            <div style="position: absolute; bottom: 40px; left: 40px;">
-                <div id="ui-wheel" class="steering-wheel">
-                    <div style="width: 100%; height: 8px; background: #1e293b; position: absolute;"></div>
-                    <div style="width: 8px; height: 100%; background: #1e293b; position: absolute;"></div>
+            <div style="position: absolute; bottom: 30px; left: 30px; display: flex; gap: 20px; align-items: center; pointer-events: auto;">
+                <div id="btn-left" class="control-btn" style="width: 70px; height: 70px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">←</div>
+                <div id="ui-wheel" class="steering-wheel" style="width: 100px; height: 100px;">
+                    <div style="width: 100%; height: 6px; background: #1e293b; position: absolute;"></div>
+                    <div style="width: 6px; height: 100%; background: #1e293b; position: absolute;"></div>
                     <div class="wheel-hub"></div>
                 </div>
-                <!-- Camera Icon (Reference match) -->
-                <div class="side-icon" style="position: absolute; bottom: 0; left: -20px; font-size: 1rem; width: 30px; height: 30px;">📷</div>
+                <div id="btn-right" class="control-btn" style="width: 70px; height: 70px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">→</div>
             </div>
 
-            <div style="position: absolute; bottom: 40px; right: 40px; display: flex; align-items: flex-end; gap: 30px;">
-                <!-- Nitro Bottle -->
-                <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
-                    <div class="nitro-bottle">
-                        <div class="nitro-cap"></div>
-                        <div style="width: 100%; height: 60%; background: rgba(0,0,0,0.2); position: absolute; bottom: 0;"></div>
-                    </div>
-                </div>
-                <div id="pedal-brake" class="pedal" style="width: 80px; height: 80px; font-size: 0.7rem;">BRAKE</div>
-                <div id="pedal-gas" class="pedal" style="width: 80px; height: 120px; font-size: 0.8rem;">GAS</div>
+            <div style="position: absolute; bottom: 30px; right: 30px; display: flex; align-items: flex-end; gap: 20px; pointer-events: auto;">
+                <div id="pedal-brake" class="pedal" style="width: 70px; height: 70px; font-size: 0.6rem;">BRAKE</div>
+                <div id="pedal-gas" class="pedal" style="width: 70px; height: 100px; font-size: 0.7rem;">GAS</div>
             </div>
 
-            <!-- Redundant Exit Button Removed -->
+            <button class="exit-btn" onclick="RacingGame.instance.stop(); backToHub();">Exit Race</button>
         `;
 
         document.body.appendChild(hud);

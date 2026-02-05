@@ -288,18 +288,19 @@
 
         /* --- Pro Chess UI --- */
         .chess-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            /* Center horizontally and vertically */
+            display: grid;
+            place-items: center;
+            /* Use grid for more robust centering */
             gap: 12px;
             padding: 10px;
             height: 100vh;
             width: 100vw;
             background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
             overflow: hidden;
-            position: relative;
+            position: fixed;
+            /* Fixed to avoid page scroll interference */
+            top: 0;
+            left: 0;
         }
 
         #myBoard {
@@ -1268,58 +1269,74 @@
                         const pedalGas = document.getElementById('pedal-gas');
                         const pedalBrake = document.getElementById('pedal-brake');
 
-                        if (window.RacingGame && window.RacingGame.instance) {
+                        if (window.RacingGame.instance) {
                             const input = window.RacingGame.instance.input;
 
                             // Steering - Left
                             if (btnLeft) {
-                                btnLeft.addEventListener('touchstart', (e) => {
-                                    e.preventDefault();
-                                    input.setTouchControl('left', true);
+                                ['touchstart', 'mousedown'].forEach(evt => {
+                                    btnLeft.addEventListener(evt, (e) => {
+                                        e.preventDefault();
+                                        input.setTouchControl('left', true);
+                                    });
                                 });
-                                btnLeft.addEventListener('touchend', (e) => {
-                                    e.preventDefault();
-                                    input.setTouchControl('left', false);
+                                ['touchend', 'mouseup', 'mouseleave'].forEach(evt => {
+                                    btnLeft.addEventListener(evt, (e) => {
+                                        e.preventDefault();
+                                        input.setTouchControl('left', false);
+                                    });
                                 });
                             }
 
                             // Steering - Right
                             if (btnRight) {
-                                btnRight.addEventListener('touchstart', (e) => {
-                                    e.preventDefault();
-                                    input.setTouchControl('right', true);
+                                ['touchstart', 'mousedown'].forEach(evt => {
+                                    btnRight.addEventListener(evt, (e) => {
+                                        e.preventDefault();
+                                        input.setTouchControl('right', true);
+                                    });
                                 });
-                                btnRight.addEventListener('touchend', (e) => {
-                                    e.preventDefault();
-                                    input.setTouchControl('right', false);
+                                ['touchend', 'mouseup', 'mouseleave'].forEach(evt => {
+                                    btnRight.addEventListener(evt, (e) => {
+                                        e.preventDefault();
+                                        input.setTouchControl('right', false);
+                                    });
                                 });
                             }
 
                             // Gas Pedal
                             if (pedalGas) {
-                                pedalGas.addEventListener('touchstart', (e) => {
-                                    e.preventDefault();
-                                    input.setTouchControl('throttle', true);
+                                ['touchstart', 'mousedown'].forEach(evt => {
+                                    pedalGas.addEventListener(evt, (e) => {
+                                        e.preventDefault();
+                                        input.setTouchControl('throttle', true);
+                                    });
                                 });
-                                pedalGas.addEventListener('touchend', (e) => {
-                                    e.preventDefault();
-                                    input.setTouchControl('throttle', false);
+                                ['touchend', 'mouseup', 'mouseleave'].forEach(evt => {
+                                    pedalGas.addEventListener(evt, (e) => {
+                                        e.preventDefault();
+                                        input.setTouchControl('throttle', false);
+                                    });
                                 });
                             }
 
                             // Brake Pedal
                             if (pedalBrake) {
-                                pedalBrake.addEventListener('touchstart', (e) => {
-                                    e.preventDefault();
-                                    input.setTouchControl('brake', true);
+                                ['touchstart', 'mousedown'].forEach(evt => {
+                                    pedalBrake.addEventListener(evt, (e) => {
+                                        e.preventDefault();
+                                        input.setTouchControl('brake', true);
+                                    });
                                 });
-                                pedalBrake.addEventListener('touchend', (e) => {
-                                    e.preventDefault();
-                                    input.setTouchControl('brake', false);
+                                ['touchend', 'mouseup', 'mouseleave'].forEach(evt => {
+                                    pedalBrake.addEventListener(evt, (e) => {
+                                        e.preventDefault();
+                                        input.setTouchControl('brake', false);
+                                    });
                                 });
                             }
                         }
-                    }, 500); // Wait for racing game to fully initialize
+                    }, 500);
                 }
 
                 // Join Multiplayer Room if active
@@ -1417,7 +1434,7 @@
             document.querySelector('.back-btn').style.display = 'none';
 
             overlay.innerHTML = ` 
-                <div class="chess-container chess-wood-theme" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 40px; position: relative; width: 100vw; height: 100vh; padding: 20px;" > 
+                <div class="chess-container chess-wood-theme"> 
                     
                     <!-- Side Controls (As per image) -->
                     <div class="side-controls">
