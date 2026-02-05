@@ -103,7 +103,7 @@ class CarromEngine {
         this.canvas.height = height;
         const size = Math.min(width, height) * 0.95;
         this.centerX = width / 2;
-        this.centerY = height / 2;
+        this.centerY = (height / 2) + 50;
         this.boardRadius = size / 2;
         this.pocketRadius = this.boardRadius * 0.08;
         this.coinRadius = this.boardRadius * 0.045;
