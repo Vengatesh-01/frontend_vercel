@@ -160,30 +160,8 @@ class CarromEngine {
     setupUI() {
         console.log("CarromEngine: Setting up UI...");
 
-        // Create Exit Button for Carrom
-        const exitBtn = document.createElement('button');
-        exitBtn.innerText = 'Exit Match';
-        exitBtn.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(239, 68, 68, 0.9);
-            border: 2px solid #ef4444;
-            color: white;
-            padding: 10px 24px;
-            border-radius: 12px;
-            font-weight: 800;
-            cursor: pointer;
-            pointer-events: auto;
-            z-index: 2147483648;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        `;
-        exitBtn.onclick = () => {
-            if (window.backToHub) window.backToHub();
-        };
-        this.overlay.appendChild(exitBtn);
+        // Exit button removed to prevent UI overlap - relying on main game container controls
+
 
         // Remove any existing HUD to prevent duplicates
         const existingHud = document.getElementById('carrom-score-hud-root');

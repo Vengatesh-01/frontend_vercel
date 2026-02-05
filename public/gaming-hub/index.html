@@ -2047,35 +2047,13 @@
                 z-index: 9999;
             `;
 
-            // Add Exit Button for Carrom
-            const exitBtn = document.createElement('button');
-            exitBtn.innerText = 'Exit Match';
-            exitBtn.style.cssText = `
-                position: absolute;
-                top: 15px;
-                right: 15px;
-                background: rgba(239, 68, 68, 0.9);
-                border: 2px solid #ef4444;
-                color: white;
-                padding: 10px 24px;
-                border-radius: 12px;
-                font-weight: 800;
-                cursor: pointer;
-                pointer-events: auto;
-                z-index: 10000;
-                text-transform: uppercase;
-                letter-spacing: 1px;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-                transition: transform 0.1s active;
-            `;
-            exitBtn.onclick = () => {
-                backToHub();
-                stopCarrom();
-            };
-            uiLayer.appendChild(exitBtn);
-
             document.body.appendChild(uiLayer);
-            document.querySelector('.back-btn').style.display = 'none';
+            // Ensure back button is visible and on top
+            const backBtn = document.querySelector('.back-btn');
+            if (backBtn) {
+                backBtn.style.display = 'block';
+                backBtn.style.zIndex = '10001'; // Higher than uiLayer
+            }
             carromEngine.start(canvas, uiLayer, ctx);
         }
 
