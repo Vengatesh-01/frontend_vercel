@@ -78,7 +78,8 @@ export const uploadToCloudinary = async (file, token, onProgress) => {
 
         // Differentiate between connectivity issues and auth issues
         if (error.response?.status === 401) {
-            throw new Error('Your session has expired. Please log out and log back in to upload.');
+            const serverMsg = error.response?.data?.message;
+            throw new Error(serverMsg || 'Your session has expired. Please log out and log back in to upload.');
         }
 
         if (error.code === 'ERR_NETWORK') {
