@@ -106,34 +106,30 @@ class CarromEngine {
 
     stop() {
         this.active = false;
-        if (this.animationId) cancelAnimationFrame(this.animationId);
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
 
+        // Clean up listeners
         if (this.canvas) {
             this.canvas.removeEventListener('mousedown', this.handleMouseDown);
+            this.canvas.removeEventListener('touchstart', this.handleMouseDown);
         }
         window.removeEventListener('mousemove', this.handleMouseMove);
         window.removeEventListener('mouseup', this.handleMouseUp);
         window.removeEventListener('keydown', this.handleKeyDown);
-
-        // Clear UI
-        const hudRoot = document.getElementById('carrom-score-hud-root');
-        if (hudRoot) hudRoot.remove();
-
-        // Restore Exit Button
-        const backBtns = document.querySelectorAll('.back-btn');
-        backBtns.forEach(btn => {
-            if (btn.dataset.originalTop) btn.style.top = btn.dataset.originalTop;
-            if (btn.dataset.originalTransform !== undefined) btn.style.transform = btn.dataset.originalTransform;
-            if (btn.dataset.originalPadding !== undefined) btn.style.padding = btn.dataset.originalPadding;
-            if (btn.dataset.originalBackground !== undefined) btn.style.background = btn.dataset.originalBackground;
-            if (btn.dataset.originalBorder !== undefined) btn.style.border = btn.dataset.originalBorder;
-            btn.style.borderRadius = ''; // Reset to CSS default
-            btn.style.boxShadow = '';
-        });
+        window.removeEventListener('touchmove', this.handleMouseMove);
+        window.removeEventListener('touchend', this.handleMouseUp);
 
         if (this.overlay) {
             this.overlay.innerHTML = '';
             this.overlay.style.pointerEvents = "none";
+            // Do NOT remove overlay here, parent handles it
+        }
+
+        if (this.audioCtx) {
+            // Suspended/Close context if needed
         }
     }
 
