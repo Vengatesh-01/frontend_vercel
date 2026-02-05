@@ -51,10 +51,13 @@ const HomePage = ({ showCreatePost, setShowCreatePost, showUploadModal, setShowU
     const [previewMediaType, setPreviewMediaType] = useState('image'); // 'image' or 'video'
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+    const [activeVideoId, setActiveVideoId] = useState(null); // Track which video is currently in viewport
 
     const progressInterval = useRef(null);
     const socket = useRef(null);
     const hiddenPostInputRef = useRef(null);
+    const videoRefs = useRef(new Map()); // Store video element references
+    const videoObserver = useRef(null); // Intersection Observer instance
 
     const allDisplayStories = useMemo(() => {
         return userStory ? [userStory, ...stories] : stories;
@@ -330,6 +333,52 @@ const HomePage = ({ showCreatePost, setShowCreatePost, showUploadModal, setShowU
     };
 
     useEffect(() => { if (user) fetchStories(); }, [user]);
+
+    // Smart Video Playback: Intersection Observer for Feed Videos
+    useEffect(() => {
+        // Create observer to track which video is in viewport
+        videoObserver.current = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    const videoId = entry.target.dataset.videoId;
+
+                    if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+                        // Video is 50%+ visible, make it active
+                        setActiveVideoId(videoId);
+
+                        // Play the video
+                        const video = entry.target;
+                        video.play().catch(err => console.log('Autoplay prevented:', err));
+                    } else if (!entry.isIntersecting || entry.intersectionRatio < 0.5) {
+                        // Video is less than 50% visible or out of view
+                        const video = entry.target;
+                        video.pause();
+
+                        // If this was the active video, clear active state
+                        setActiveVideoId(prev => prev === videoId ? null : prev);
+                    }
+                });
+            },
+            {
+                threshold: [0, 0.5, 1.0], // Trigger at 0%, 50%, and 100% visibility
+                rootMargin: '0px'
+            }
+        );
+
+        // Observe all existing videos
+        videoRefs.current.forEach((video, id) => {
+            if (video) {
+                videoObserver.current.observe(video);
+            }
+        });
+
+        // Cleanup
+        return () => {
+            if (videoObserver.current) {
+                videoObserver.current.disconnect();
+            }
+        };
+    }, [feedItems]); // Re-run when feed items change
 
     // Story Progress Logic
     // Initialize story state when index changes
@@ -836,14 +885,21 @@ const HomePage = ({ showCreatePost, setShowCreatePost, showUploadModal, setShowU
                                                 <video
                                                     ref={(el) => {
                                                         if (el) {
-                                                            // Optional: pause if not active/in view logic could go here
+                                                            // Register video with observer
+                                                            el.dataset.videoId = item.id;
+                                                            videoRefs.current.set(item.id, el);
+                                                            if (videoObserver.current) {
+                                                                videoObserver.current.observe(el);
+                                                            }
+                                                        } else {
+                                                            // Clean up when unmounted
+                                                            videoRefs.current.delete(item.id);
                                                         }
                                                     }}
                                                     src={getAppUrl(item.videoUrl)}
                                                     className="w-full h-full object-contain absolute top-0 left-0"
-                                                    autoPlay
                                                     loop
-                                                    muted={reelMuted[item.id] !== false}
+                                                    muted={activeVideoId !== item.id || reelMuted[item.id] !== false}
                                                     playsInline
                                                     onError={(e) => {
                                                         console.error('Video error:', item.videoUrl);
