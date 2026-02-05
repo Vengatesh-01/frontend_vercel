@@ -9,6 +9,7 @@ import {
 } from 'react-icons/fa';
 import AuthContext from '../context/AuthContext';
 import { BACKEND_URL } from '../utils/urlUtils';
+import { uploadToCloudinary } from '../utils/cloudinary';
 
 const SettingsPage = () => {
     const { user, logout } = useContext(AuthContext);
@@ -30,8 +31,11 @@ const SettingsPage = () => {
     const [profileData, setProfileData] = useState({
         username: user?.username || '',
         bio: user?.bio || '',
-        photo: user?.profilePic || user?.profilePicture || ''
+        photo: user?.profilePic || ''
     });
+
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
 
     const { checkUserLoggedIn } = useContext(AuthContext);
 
@@ -150,20 +154,24 @@ const SettingsPage = () => {
         const file = e.target.files[0];
         if (!file) return;
 
-        const formData = new FormData();
-        formData.append('file', file);
-
+        setIsUploading(true);
+        setUploadProgress(0);
         showToast('Uploading photo...');
+
         try {
-            const res = await axios.post(`${BACKEND_URL}/api/upload`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
+            const token = localStorage.getItem('token');
+            const data = await uploadToCloudinary(file, token, (percent) => {
+                setUploadProgress(percent);
             });
-            const fullUrl = getAppUrl(res.data.filePath);
-            setProfileData({ ...profileData, photo: fullUrl });
-            showToast('Photo uploaded!');
+
+            setProfileData({ ...profileData, photo: data.filePath });
+            showToast('Photo uploaded! Click "Save Profile" to apply changes.');
         } catch (err) {
             console.error('Error uploading file:', err);
-            showToast('Upload failed');
+            showToast(err.message || 'Upload failed');
+        } finally {
+            setIsUploading(false);
+            setUploadProgress(0);
         }
     };
 
