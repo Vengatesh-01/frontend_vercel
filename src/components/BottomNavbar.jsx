@@ -33,7 +33,7 @@ const BottomNavbar = ({ onCreatePost, onSearchToggle }) => {
 
     return (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center h-14 md:hidden z-[100]">
-            <span className="absolute -top-4 right-2 text-[10px] text-gray-400">v1.0.1-auth-debug</span>
+            <span className="absolute -top-4 right-2 text-[8px] text-gray-300">v1.0.1-auth-verify-v4</span>
             {navItems.map((item, idx) => {
                 const Icon = item.icon;
                 const isItemActive = item.path && isActive(item.path);
