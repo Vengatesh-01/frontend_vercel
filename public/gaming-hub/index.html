@@ -291,11 +291,11 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             gap: 12px;
             padding: 10px;
             height: 100vh;
             width: 100vw;
-            justify-content: center;
             background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
             overflow: hidden;
             position: relative;
@@ -1259,6 +1259,37 @@
                     // Ensure Racing UI container fits screen
                     const gameContainer = document.getElementById('game-container');
                     gameContainer.style.overflow = 'hidden';
+
+                    // Wire up mobile controls for touch steering
+                    setTimeout(() => {
+                        const btnLeft = document.getElementById('btn-left');
+                        const btnRight = document.getElementById('btn-right');
+
+                        if (btnLeft && btnRight && window.RacingGame && window.RacingGame.instance) {
+                            const input = window.RacingGame.instance.input;
+
+                            // Auto-throttle on mobile (always accelerating)
+                            input.setTouchControl('throttle', true);
+
+                            // Left button
+                            btnLeft.addEventListener('touchstart', (e) => {
+                                e.preventDefault();
+                                input.setTouchControl('left', true);
+                            });
+                            btnLeft.addEventListener('touchend', () => {
+                                input.setTouchControl('left', false);
+                            });
+
+                            // Right button
+                            btnRight.addEventListener('touchstart', (e) => {
+                                e.preventDefault();
+                                input.setTouchControl('right', true);
+                            });
+                            btnRight.addEventListener('touchend', () => {
+                                input.setTouchControl('right', false);
+                            });
+                        }
+                    }, 500); // Wait for racing game to fully initialize
                 }
 
                 // Join Multiplayer Room if active

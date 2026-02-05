@@ -57,7 +57,7 @@ const CarromGame = (function () {
             osc.frequency.setValueAtTime(800 + Math.random() * 400, audioCtx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
 
-            gain.gain.setValueAtTime(volume * 0.2, audioCtx.currentTime);
+            gain.gain.setValueAtTime(volume * 0.5, audioCtx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
 
             osc.connect(gain);
@@ -70,7 +70,7 @@ const CarromGame = (function () {
             const noise = audioCtx.createBufferSource();
             noise.buffer = createNoiseBuffer();
             const noiseGain = audioCtx.createGain();
-            noiseGain.gain.setValueAtTime(volume * 0.1, audioCtx.currentTime);
+            noiseGain.gain.setValueAtTime(volume * 0.3, audioCtx.currentTime);
             noiseGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.02);
             noise.connect(noiseGain);
             noiseGain.connect(audioCtx.destination);
@@ -86,7 +86,7 @@ const CarromGame = (function () {
             osc.frequency.setValueAtTime(200, audioCtx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.3);
 
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
             gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
 
             osc.connect(gain);
@@ -103,7 +103,7 @@ const CarromGame = (function () {
             osc.type = 'sine';
             osc.frequency.setValueAtTime(150, audioCtx.currentTime);
 
-            gain.gain.setValueAtTime(volume * 0.15, audioCtx.currentTime);
+            gain.gain.setValueAtTime(volume * 0.4, audioCtx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
 
             osc.connect(gain);

@@ -88,6 +88,23 @@ class RacingInput {
         }
     }
 
+    setTouchControl(control, isActive) {
+        switch (control) {
+            case 'throttle':
+                this.touch.throttle = isActive;
+                break;
+            case 'left':
+                this.touch.left = isActive;
+                break;
+            case 'right':
+                this.touch.right = isActive;
+                break;
+            case 'brake':
+                this.touch.brake = isActive;
+                break;
+        }
+    }
+
     getSteer() {
         if (this.gyro.active && Math.abs(this.gyro.tilt) > 0.1) {
             return this.gyro.tilt;
