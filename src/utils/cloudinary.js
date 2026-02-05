@@ -79,7 +79,15 @@ export const uploadToCloudinary = async (file, token, onProgress) => {
         // Differentiate between connectivity issues and auth issues
         if (error.response?.status === 401) {
             const serverMsg = error.response?.data?.message;
+            // Cloudinary's error body often contains the "string to sign" it expected.
+            // This is invaluable for debugging signature mismatches.
+            const cloudError = error.response?.data?.error?.message || '';
             const detail = error.response?.data ? JSON.stringify(error.response.data) : 'No response body';
+
+            if (cloudError.includes('Invalid Signature')) {
+                throw new Error(`Cloudinary Signature Error: ${cloudError}. Please check your API Secret.`);
+            }
+
             throw new Error(serverMsg || `Session invalid (401). Details: ${detail}`);
         }
 
